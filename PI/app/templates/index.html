@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}VivaPet - Início{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Hero Section com Imagem de Fundo -->
+    <div class="card shadow-sm border-0 mb-5">
+        <div class="card-body p-5 text-center hero-background">
+            <h1 class="display-4 fw-bold text-primary mb-3">Bem-vindo ao VivaPet</h1>
+            <p class="lead fs-4 mb-4">O melhor lugar para cuidar do seu pet!</p>
+            <hr class="my-4 w-50 mx-auto">
+            <p class="mb-4">Oferecemos serviços de qualidade para o seu animal de estimação.</p>
+            
+            {% if not current_user.is_authenticated %}
+                <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                    <a class="btn btn-primary btn-lg px-4 gap-3" href="{{ url_for('auth.login') }}" role="button">
+                        <i class="fas fa-sign-in-alt me-2"></i> Login
+                    </a>
+                    <a class="btn btn-outline-primary btn-lg px-4" href="{{ url_for('routes_bp.exibir_form_cadastro') }}" role="button">
+                        <i class="fas fa-user-plus me-2"></i> Cadastre-se
+                    </a>
+                </div>
+            {% else %}
+                <div class="alert alert-success p-3 d-inline-block">
+                    <i class="fas fa-paw me-2"></i> Olá, <strong>{{ current_user.nome_user }}</strong>! Bem-vindo de volta.
+                </div>
+                <div class="mt-3">
+                    <a class="btn btn-primary btn-lg" href="{{ url_for('routes_bp.agendamentos_listar_html') }}" role="button">
+                        <i class="fas fa-calendar-alt me-2"></i> Meus Agendamentos
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Serviços -->
+    <h2 class="text-center mb-4 pet-form-title">Nossos Serviços</h2>
+    
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0 hover-effect">
+                <div class="text-center pt-4">
+                    <i class="fas fa-dog fa-3x text-primary"></i>
+                </div>
+                <div class="card-body text-center">
+                    <h3 class="card-title h5">Cãominhadas</h3>
+                    <p class="card-text">As Cãominhadas têm se tornado cada vez mais populares em áreas urbanas como uma forma de fortalecer o vínculo entre humanos e seus melhores amigos de quatro patas, promovendo ao mesmo tempo um estilo de vida mais saudável para ambos.</p>
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('routes_bp.agendamentos_novo_html') }}" class="btn btn-sm btn-outline-primary mt-2">
+                        <i class="fas fa-calendar-plus me-1"></i> Agendar
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0 hover-effect">
+                <div class="text-center pt-4">
+                    <i class="fas fa-shield-dog fa-3x text-primary"></i>
+                </div>
+                <div class="card-body text-center">
+                    <h3 class="card-title h5">Creche</h3>
+                    <p class="card-text">A creche para pets oferece um ambiente seguro e estimulante para cães enquanto seus tutores estão ocupados. Neste espaço, os animais recebem atenção personalizada, participam de atividades recreativas e socializam com outros bichinhos sob supervisão profissional.</p>
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('routes_bp.agendamentos_novo_html') }}" class="btn btn-sm btn-outline-primary mt-2">
+                        <i class="fas fa-calendar-plus me-1"></i> Agendar
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0 hover-effect">
+                <div class="text-center pt-4">
+                    <i class="fas fa-home fa-3x text-primary"></i>
+                </div>
+                <div class="card-body text-center">
+                    <h3 class="card-title h5">Hospedagem</h3>
+                    <p class="card-text">Espaço confortável, seguro e com supervisão constante para seu pet se sentir em casa enquanto você viaja.</p>
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('routes_bp.agendamentos_novo_html') }}" class="btn btn-sm btn-outline-primary mt-2">
+                        <i class="fas fa-calendar-plus me-1"></i> Agendar
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Seção adicional com CTA -->
+    {% if not current_user.is_authenticated %}
+    <div class="card mt-5 bg-light border-0 shadow-sm">
+        <div class="card-body p-4 text-center">
+            <h3 class="mb-3">Faça login para acessar todos os nossos serviços</h3>
+            <p class="mb-4">Agende serviços, acompanhe seus agendamentos e muito mais!</p>
+            <a class="btn btn-primary" href="{{ url_for('auth.login') }}">
+                <i class="fas fa-sign-in-alt me-2"></i> Entrar
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}Lista de Agendamentos{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="h3 mb-2 text-gray-800">Agendamentos</h1>
+    <p class="mb-4">Gerenciamento de agendamentos</p>
+    
+    <!-- Cards de resumo -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total de Agendamentos</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_agendamentos }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Agendamentos Hoje</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ agendamentos_hoje }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-day fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Próximos 7 Dias</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ agendamentos_semana }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-week fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filtros</h6>
+        </div>
+        <div class="card-body">
+            <form id="filterForm" method="GET" action="{{ url_for('routes_bp.agendamentos_listar_html') }}">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="data" class="form-label">Data</label>
+                        <input type="date" class="form-control" id="data" name="data" value="{{ data_filter }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="" {% if status_filter == "" %}selected{% endif %}>Todos</option>
+                            <option value="confirmado" {% if status_filter == "confirmado" %}selected{% endif %}>Confirmado</option>
+                            <option value="cancelado" {% if status_filter == "cancelado" %}selected{% endif %}>Cancelado</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="pagamento" class="form-label">Status Pagamento</label>
+                        <select class="form-select" id="pagamento" name="pagamento">
+                            <option value="" {% if pagamento_filter == "" %}selected{% endif %}>Todos</option>
+                            <option value="pendente" {% if pagamento_filter == "pendente" %}selected{% endif %}>Pendente</option>
+                            <option value="pago" {% if pagamento_filter == "pago" %}selected{% endif %}>Pago</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-1"></i>Filtrar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Botão para criar novo agendamento - CORRIGIDO PARA USAR A ROTA EXISTENTE -->
+    <div class="mb-4">
+        <a href="{{ url_for('routes_bp.agendamentos_novo_form') }}" class="btn btn-success">
+            <i class="fas fa-plus-circle me-1"></i> Novo Agendamento
+        </a>
+    </div>
+    
+    <!-- Tabela de agendamentos -->
+    {% if agendamentos|length > 0 %}
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Cliente</th>
+                            <th>Pet</th>
+                            <th>Data de Entrada</th>
+                            <th>Data de Saída</th>
+                            <th>Status</th>
+                            <th>Pagamento</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for agendamento in agendamentos %}
+                        <tr>
+                            <td>{{ agendamento.id_agendamento }}</td>
+                            <td>{{ agendamento.usuario.nome_user }}</td>
+                            <td>{{ agendamento.pet.nome_pet }}</td>
+                            <td>{{ agendamento.data_entrada.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td>{{ agendamento.data_saida.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td>
+                                {% if agendamento.status == 'confirmado' %}
+                                <span class="badge bg-success">Confirmado</span>
+                                {% elif agendamento.status == 'cancelado' %}
+                                <span class="badge bg-danger">Cancelado</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ agendamento.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if agendamento.status_pagamento == 'pendente' %}
+                                <span class="badge bg-warning text-dark">Pendente</span>
+                                {% elif agendamento.status_pagamento == 'pago' %}
+                                <span class="badge bg-success">Pago</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ agendamento.status_pagamento }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('routes_bp.agendamentos_detalhar_html', id=agendamento.id_agendamento) }}" class="btn btn-sm btn-outline-info" title="Detalhes">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    <!-- Botão para status pendente -->
+                                    {% if agendamento.status_pagamento == 'pendente' %}
+                                    <a href="/agendamento/{{ agendamento.id_agendamento }}/pagamento" class="btn btn-sm btn-outline-success" title="Realizar Pagamento">
+                                        <i class="fas fa-dollar-sign"></i>
+                                    </a>
+                                    {% endif %}
+                                    
+                                    <!-- Botão para editar (apenas admin) -->
+                                    {% if current_user.is_admin %}
+                                    <a href="{{ url_for('routes_bp.agendamentos_editar_form', id=agendamento.id_agendamento) }}" class="btn btn-sm btn-outline-primary" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% endif %}
+                                    
+                                    <!-- Botão para cancelar (admin ou próprio usuário) -->
+                                    {% if current_user.is_admin or agendamento.id_usuario == current_user.id_usuario %}
+                                    <button type="button" class="btn btn-sm btn-outline-danger" title="Cancelar"
+                                        onclick="confirmarCancelamento('{{ agendamento.id_agendamento }}')">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Paginação -->
+    {% if total_pages > 1 %}
+    <div class="d-flex justify-content-center mt-4">
+        <nav aria-label="Navegação de páginas">
+            <ul class="pagination">
+                <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('routes_bp.agendamentos_listar_html', page=current_page-1, data=data_filter, status=status_filter, pagamento=pagamento_filter) }}">Anterior</a>
+                </li>
+                
+                {% for i in range(1, total_pages + 1) %}
+                <li class="page-item {% if current_page == i %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('routes_bp.agendamentos_listar_html', page=i, data=data_filter, status=status_filter, pagamento=pagamento_filter) }}">{{ i }}</a>
+                </li>
+                {% endfor %}
+                
+                <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('routes_bp.agendamentos_listar_html', page=current_page+1, data=data_filter, status=status_filter, pagamento=pagamento_filter) }}">Próxima</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle mr-2"></i> Nenhum agendamento encontrado com os filtros selecionados.
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal de confirmação de cancelamento -->
+<div class="modal fade" id="cancelarModal" tabindex="-1" aria-labelledby="cancelarModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelarModalLabel">Confirmar Cancelamento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja cancelar este agendamento?</p>
+                <p class="text-danger">Esta ação não pode ser desfeita.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Não, manter agendamento</button>
+                <button type="button" class="btn btn-danger" id="confirmarCancelamentoBtn">Sim, cancelar agendamento</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Função para mostrar modal de cancelamento
+    let agendamentoIdParaCancelar = null;
+    
+    function confirmarCancelamento(id) {
+        agendamentoIdParaCancelar = id;
+        const modal = new bootstrap.Modal(document.getElementById('cancelarModal'));
+        modal.show();
+    }
+    
+    // Manipular clique no botão de confirmação do modal
+    document.getElementById('confirmarCancelamentoBtn').addEventListener('click', function() {
+        if (agendamentoIdParaCancelar) {
+            window.location.href = '/agendamento/' + agendamentoIdParaCancelar + '/cancelar';
+        }
+    });
+</script>
+
+{% endblock %}

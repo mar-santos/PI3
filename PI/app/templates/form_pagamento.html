@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3 mb-0 text-gray-800">
+                {% if modo == 'novo' %}
+                Novo Pagamento
+                {% elif modo == 'detalhes' %}
+                Detalhes do Pagamento
+                {% else %}
+                Editar Pagamento
+                {% endif %}
+            </h1>
+        </div>
+    </div>
+
+    {% if modo == 'detalhes' or modo == 'visualizar' %}
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Informações do Pagamento</h6>
+            <div class="dropdown no-arrow">
+                {% if pagamento.status == 'pendente' and (current_user.is_admin or (usuario and usuario.id_usuario == current_user.id_usuario)) %}
+                <a href="/pagamentos/{{ pagamento.id_pagamento }}/confirmar" class="btn btn-sm btn-success">
+                    <i class="fas fa-check"></i> Confirmar Pagamento
+                </a>
+                {% endif %}
+                
+                {% if pagamento.status == 'pago' %}
+                <button type="button" class="btn btn-sm btn-primary" onclick="imprimirRecibo('{{ pagamento.id_pagamento }}')">
+                    <i class="fas fa-print"></i> Imprimir Recibo
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <p><strong>ID do Pagamento:</strong> {{ pagamento.id_pagamento }}</p>
+                    <p><strong>Agendamento:</strong> #{{ agendamento.id_agendamento }}</p>
+                    <p><strong>Cliente:</strong> {{ usuario.nome_user }}</p>
+                    <p><strong>Valor:</strong> R$ {{ "%.2f"|format(pagamento.valor) }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Status:</strong> 
+                        {% if pagamento.status == 'pendente' %}
+                        <span class="badge bg-warning text-dark">Pendente</span>
+                        {% elif pagamento.status == 'pago' %}
+                        <span class="badge bg-success">Pago</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ pagamento.status }}</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>Data de Criação:</strong> {{ pagamento.data_criacao.strftime('%d/%m/%Y %H:%M') }}</p>
+                    <p><strong>Data do Pagamento:</strong> 
+                        {% if pagamento.data_pagamento %}
+                        {{ pagamento.data_pagamento.strftime('%d/%m/%Y %H:%M') }}
+                        {% else %}
+                        <span class="text-muted">Pendente</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>Tipo de Pagamento:</strong> 
+                        {% if pagamento.tipo_pagamento %}
+                        {{ pagamento.tipo_pagamento }}
+                        {% else %}
+                        <span class="text-muted">Não informado</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            
+            <h6 class="font-weight-bold">Detalhes do Agendamento</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Data de Entrada:</strong> {{ agendamento.data_entrada.strftime('%d/%m/%Y %H:%M') }}</p>
+                    <p><strong>Data de Saída:</strong> {{ agendamento.data_saida.strftime('%d/%m/%Y %H:%M') }}</p>
+                    {% if pet %}
+                    <p><strong>Pet:</strong> {{ pet.nome }}</p>
+                    {% endif %}
+                    {% if agendamento.servico %}
+                    <p><strong>Serviço:</strong> {{ agendamento.servico.nome }}</p>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Status do Agendamento:</strong> 
+                        {% if agendamento.status == 'pendente' %}
+                        <span class="badge bg-warning text-dark">Pendente</span>
+                        {% elif agendamento.status == 'confirmado' %}
+                        <span class="badge bg-success">Confirmado</span>
+                        {% elif agendamento.status == 'concluido' %}
+                        <span class="badge bg-info">Concluído</span>
+                        {% elif agendamento.status == 'cancelado' %}
+                        <span class="badge bg-danger">Cancelado</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ agendamento.status }}</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>Observações:</strong> 
+                        {% if agendamento.observacoes %}
+                        {{ agendamento.observacoes }}
+                        {% else %}
+                        <span class="text-muted">Nenhuma observação</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            
+            {% if pagamento.observacoes %}
+            <div class="row mt-3">
+                <div class="col-12">
+                    <h6 class="font-weight-bold">Observações do Pagamento</h6>
+                    <p>{{ pagamento.observacoes }}</p>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="mt-4">
+                <a href="{{ url_for('routes_bp.pagamentos_listar_html') }}" class="btn btn-secondary">Voltar para Lista</a>
+                
+                {% if agendamento and agendamento.id_agendamento %}
+                <a href="{{ url_for('routes_bp.agendamentos_detalhe_html', id=agendamento.id_agendamento) }}" class="btn btn-info">Ver Agendamento</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                {% if modo == 'novo' %}
+                Novo Pagamento
+                {% else %}
+                Editar Pagamento
+                {% endif %}
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('routes_bp.pagamentos_criar') if modo == 'novo' else '/pagamentos/' ~ pagamento.id_pagamento ~ '/editar' }}">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="agendamento_id" class="form-label">Agendamento</label>
+                        <select class="form-select" id="agendamento_id" name="agendamento_id" required>
+                            <option value="">Selecione um agendamento</option>
+                            {% for ag in agendamentos_disponiveis %}
+                            <option value="{{ ag.id_agendamento }}" {% if agendamento and ag.id_agendamento == agendamento.id_agendamento %}selected{% endif %}>
+                                #{{ ag.id_agendamento }} - 
+                                {% if ag.pet %}{{ ag.pet.nome }}{% else %}Pet não especificado{% endif %} 
+                                ({{ ag.data_entrada.strftime('%d/%m/%Y %H:%M') }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="valor" class="form-label">Valor (R$)</label>
+                        <input type="number" class="form-control" id="valor" name="valor" step="0.01" min="0" 
+                               value="{{ '%.2f'|format(pagamento.valor) if pagamento else '' }}" required>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status" required>
+                            <option value="pendente" {% if pagamento and pagamento.status == 'pendente' %}selected{% endif %}>Pendente</option>
+                            <option value="pago" {% if pagamento and pagamento.status == 'pago' %}selected{% endif %}>Pago</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="tipo_pagamento" class="form-label">Tipo de Pagamento</label>
+                        <select class="form-select" id="tipo_pagamento" name="tipo_pagamento">
+                            <option value="">Selecione</option>
+                            <option value="Dinheiro" {% if pagamento and pagamento.tipo_pagamento == 'Dinheiro' %}selected{% endif %}>Dinheiro</option>
+                            <option value="Cartão de Crédito" {% if pagamento and pagamento.tipo_pagamento == 'Cartão de Crédito' %}selected{% endif %}>Cartão de Crédito</option>
+                            <option value="Cartão de Débito" {% if pagamento and pagamento.tipo_pagamento == 'Cartão de Débito' %}selected{% endif %}>Cartão de Débito</option>
+                            <option value="PIX" {% if pagamento and pagamento.tipo_pagamento == 'PIX' %}selected{% endif %}>PIX</option>
+                            <option value="Transferência Bancária" {% if pagamento and pagamento.tipo_pagamento == 'Transferência Bancária' %}selected{% endif %}>Transferência Bancária</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="observacoes" class="form-label">Observações</label>
+                    <textarea class="form-control" id="observacoes" name="observacoes" rows="3">{{ pagamento.observacoes if pagamento and pagamento.observacoes else '' }}</textarea>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{{ url_for('routes_bp.pagamentos_listar_html') }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal para imprimir recibo -->
+<div class="modal fade" id="modalRecibo" tabindex="-1" aria-labelledby="modalReciboLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalReciboLabel">Recibo de Pagamento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body" id="conteudoRecibo">
+                <!-- O conteúdo do recibo será carregado dinamicamente aqui -->
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Carregando...</span>
+                    </div>
+                    <p>Carregando recibo...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                <button type="button" class="btn btn-primary" onclick="window.print()">Imprimir</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CSS e Script para impressão -->
+<style>
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        #modalRecibo, #modalRecibo * {
+            visibility: visible;
+        }
+        #modalRecibo {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+        #modalRecibo .modal-dialog {
+            max-width: 100%;
+            margin: 0;
+        }
+        #modalRecibo .modal-content {
+            border: none;
+        }
+        #modalRecibo .modal-header,
+        #modalRecibo .modal-footer {
+            display: none;
+        }
+    }
+</style>
+
+<script>
+    // Função para imprimir recibo
+    function imprimirRecibo(pagamentoId) {
+        // Abrir o modal
+        var myModal = new bootstrap.Modal(document.getElementById('modalRecibo'));
+        myModal.show();
+        
+        // Carregar os dados do recibo
+        fetch('/api/pagamentos/' + pagamentoId + '/recibo')
+            .then(response => response.json())
+            .then(data => {
+                // Formatar e exibir o recibo
+                if (data.status === 'success') {
+                    document.getElementById('conteudoRecibo').innerHTML = formatarRecibo(data.pagamento);
+                } else {
+                    document.getElementById('conteudoRecibo').innerHTML = 
+                        '<div class="alert alert-danger">Erro ao carregar o recibo: ' + data.message + '</div>';
+                }
+            })
+            .catch(error => {
+                document.getElementById('conteudoRecibo').innerHTML = 
+                    '<div class="alert alert-danger">Erro ao carregar o recibo: ' + error.message + '</div>';
+            });
+    }
+    
+    function formatarRecibo(pagamento) {
+        var dataFormatada = 'Pendente';
+        if (pagamento.data_pagamento) {
+            var data = new Date(pagamento.data_pagamento);
+            dataFormatada = data.toLocaleDateString('pt-BR') + ' ' + data.toLocaleTimeString('pt-BR');
+        }
+        
+        var tipoPagamento = 'Não informado';
+        if (pagamento.tipo_pagamento) {
+            tipoPagamento = pagamento.tipo_pagamento;
+        }
+        
+        var statusClass = 'text-warning';
+        if (pagamento.status === 'pago') {
+            statusClass = 'text-success';
+        }
+        
+        var statusText = 'PENDENTE';
+        if (pagamento.status === 'pago') {
+            statusText = 'PAGO';
+        }
+        
+        var valorFormatado = parseFloat(pagamento.valor).toFixed(2);
+        
+        var html = '';
+        html += '<div class="recibo-container border p-4">';
+        html += '    <div class="text-center mb-4">';
+        html += '        <h2>VIVAPET</h2>';
+        html += '        <p class="mb-0">CNPJ: 00.000.000/0001-00</p>';
+        html += '        <p>Av. Principal, 123 - Centro</p>';
+        html += '    </div>';
+        html += '    <h3 class="text-center mb-4">RECIBO DE PAGAMENTO</h3>';
+        html += '    <div class="row mb-3">';
+        html += '        <div class="col-6"><strong>Nº do Recibo:</strong> ' + pagamento.id_pagamento + '</div>';
+        html += '        <div class="col-6"><strong>Data do Pagamento:</strong> ' + dataFormatada + '</div>';
+        html += '    </div>';
+        html += '    <div class="mb-3">';
+        html += '        <strong>Cliente:</strong> ' + pagamento.cliente;
+        html += '    </div>';
+        html += '    <div class="mb-3">';
+        html += '        <strong>Agendamento Nº:</strong> ' + pagamento.id_agendamento;
+        html += '    </div>';
+        html += '    <div class="mb-3">';
+        html += '        <strong>Forma de Pagamento:</strong> ' + tipoPagamento;
+        html += '    </div>';
+        html += '    <div class="mb-5">';
+        html += '        <strong>Status do Pagamento:</strong> ';
+        html += '        <span class="' + statusClass + '">';
+        html += '            ' + statusText;
+        html += '        </span>';
+        html += '    </div>';
+        html += '    <div class="text-end mb-5">';
+        html += '        <h4>Valor Total: R$ ' + valorFormatado + '</h4>';
+        html += '    </div>';
+        html += '    <div class="mt-5 pt-5 text-center">';
+        html += '        <div class="border-top pt-2" style="width: 200px; margin: 0 auto;">';
+        html += '            Assinatura';
+        html += '        </div>';
+        html += '    </div>';
+        html += '</div>';
+        
+        return html;
+    }
+</script>
+{% endblock %}

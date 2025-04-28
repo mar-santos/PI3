@@ -1,0 +1,129 @@
+<!-- app/templates/editar_pet.html -->
+{% extends "base.html" %}
+
+{% block title %}VivaPet - Editar Pet{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="pet-form-title mb-4">Editar Pet</h1>
+    
+    <!-- Área para mensagens flash, se houver -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages mb-3">
+                {% for category, message in messages %}
+                    <div class="flash-{{ category }} alert alert-{{ 'success' if category == 'success' else 'danger' }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+    
+    <div class="form-container shadow-sm rounded p-4 bg-white">
+        <form class="form-pet" action="{{ url_for('routes_pets_bp.editar_pet', id=pet.id_pet) }}" method="post" enctype="multipart/form-data">
+            <div class="row">
+                <!-- Coluna da imagem -->
+                <div class="col-md-4 text-center mb-4">
+                    {% if pet.foto_pet %}
+                    <div class="photo-container mb-3">
+                        <img src="data:image/jpeg;base64,{{ b64encode(pet.foto_pet).decode('utf-8') }}" 
+                             alt="Foto de {{ pet.nome_pet }}" 
+                             class="img-fluid rounded shadow-sm current-photo"
+                             style="max-width: 100%; max-height: 220px; object-fit: cover;">
+                    </div>
+                    {% endif %}
+                    
+                    <div class="form-group mb-3">
+                        <label for="foto_pet" class="fw-bold text-primary">Nova foto do Pet:</label>
+                        <input type="file" id="foto_pet" name="foto_pet" class="form-control" accept="image/*">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="nome_pet" class="fw-bold text-primary">Nome do Pet:</label>
+                        <input type="text" id="nome_pet" name="nome_pet" value="{{ pet.nome_pet }}" class="form-control" required>
+                    </div>
+                </div>
+                
+                <!-- Coluna de informações -->
+                <div class="col-md-8">
+                    <div class="row gy-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="id_usuario" class="fw-bold text-primary">Dono:</label>
+                                <select id="id_usuario" name="id_usuario" class="form-control" required>
+                                    {% for usuario in usuarios %}
+                                    <option value="{{ usuario.id_usuario }}" {% if usuario.id_usuario == pet.id_usuario %}selected{% endif %}>
+                                        {{ usuario.nome_user }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="raca" class="fw-bold text-primary">Raça:</label>
+                                <input type="text" id="raca" name="raca" value="{{ pet.raca or '' }}" class="form-control">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="idade" class="fw-bold text-primary">Idade:</label>
+                                <input type="number" id="idade" name="idade" value="{{ pet.idade or '' }}" class="form-control">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="peso" class="fw-bold text-primary">Peso (kg):</label>
+                                <input type="number" step="0.1" id="peso" name="peso" value="{{ pet.peso or '' }}" class="form-control">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="sexo" class="fw-bold text-primary">Sexo:</label>
+                                <select id="sexo" name="sexo" class="form-control">
+                                    <option value="Macho" {% if pet.sexo == 'Macho' %}selected{% endif %}>Macho</option>
+                                    <option value="Fêmea" {% if pet.sexo == 'Fêmea' %}selected{% endif %}>Fêmea</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="castrado" class="fw-bold text-primary">Castrado:</label>
+                                <select id="castrado" name="castrado" class="form-control">
+                                    <option value="true" {% if pet.castrado %}selected{% endif %}>Sim</option>
+                                    <option value="false" {% if not pet.castrado %}selected{% endif %}>Não</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group mt-4">
+                        <label for="alimentacao" class="fw-bold text-primary">Alimentação:</label>
+                        <textarea id="alimentacao" name="alimentacao" class="form-control" rows="3">{{ pet.alimentacao or '' }}</textarea>
+                    </div>
+                    
+                    <div class="form-group mt-3">
+                        <label for="saude" class="fw-bold text-primary">Saúde:</label>
+                        <textarea id="saude" name="saude" class="form-control" rows="3">{{ pet.saude or '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4 pt-3 border-top">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-save"></i> Atualizar Pet
+                </button>
+                <a href="{{ url_for('routes_pets_bp.listar_pets_html') }}" class="btn btn-secondary ms-2">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

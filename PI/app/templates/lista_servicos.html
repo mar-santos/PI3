@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}VivaPet - Gerenciamento de Serviços{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="pet-form-title">Gerenciamento de Serviços</h1>
+        <a href="{{ url_for('routes_bp.cadastrar_servico_form') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Novo Serviço
+        </a>
+    </div>
+    
+    <!-- Área para mensagens flash, se houver -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+    
+    <div class="form-container">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>Descrição</th>
+                        <th>Valor/Hora (R$)</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for servico in servicos %}
+                    <tr>
+                        <td>{{ servico.id_servico }}</td>
+                        <td>{{ servico.nome_servico }}</td>
+                        <td>{{ servico.descricao }}</td>
+                        <td>{{ servico.valor_hora|default(0)|float }}</td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <a href="{{ url_for('routes_bp.editar_servico_form', id=servico.id_servico) }}" class="btn btn-primary">
+                                    <i class="fas fa-edit"></i> Editar
+                                </a>
+                                <button class="btn btn-danger btn-delete" data-id="{{ servico.id_servico }}">
+                                    <i class="fas fa-trash"></i> Excluir
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Configurar os botões de exclusão
+        const deleteButtons = document.querySelectorAll('.btn-delete');
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                confirmarExclusao(id);
+            });
+        });
+    });
+    
+    function confirmarExclusao(id) {
+        if (confirm('Tem certeza que deseja excluir este serviço?')) {
+            fetch(`/servicos/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao excluir serviço');
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert(data.message);
+                window.location.reload();
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Ocorreu um erro ao excluir o serviço.');
+            });
+        }
+    }
+</script>
+{% endblock %}

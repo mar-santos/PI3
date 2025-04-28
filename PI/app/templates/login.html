@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}VivaPet - Login{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5 col-xl-4">
+            <div class="form-container shadow-sm rounded bg-white">
+                <!-- Cabeçalho com Logo e Título -->
+                <div class="login-header text-center p-4 rounded-top">
+                    <img src="{{ url_for('static', filename='logo.png') }}" 
+                         alt="VivaPet Logo" 
+                         class="mb-3 login-logo">
+                    <h1 class="h3">Bem-vindo ao VivaPet</h1>
+                    <p class="mb-0">Faça login para continuar</p>
+                </div>
+                
+                <!-- Corpo do Card -->
+                <div class="p-4">
+                    <!-- Exibir mensagem de erro, se houver -->
+                    {% if message %}
+                    <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i> {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Exibir detalhes de erro técnico (para debugging) -->
+                    {% if error_detail %}
+                    <div class="alert alert-warning alert-dismissible fade show mb-4" role="alert">
+                        <h6 class="alert-heading">Detalhes técnicos (apenas para debug):</h6>
+                        <p>{{ error_detail }}</p>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Formulário de Login -->
+                    <form method="POST" action="{{ url_for('auth.login') }}">
+                        <!-- Campo Username -->
+                        <div class="mb-3">
+                            <label for="username" class="form-label fw-bold text-primary">Nome de usuário:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-user"></i>
+                                </span>
+                                <input type="text" class="form-control" id="username" name="username" required autofocus>
+                            </div>
+                        </div>
+                        
+                        <!-- Campo Senha -->
+                        <div class="mb-4">
+                            <label for="senha" class="form-label fw-bold text-primary">Senha:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-lock"></i>
+                                </span>
+                                <input type="password" class="form-control" id="senha" name="senha" required>
+                            </div>
+                        </div>
+                        
+                        <!-- Botão de Submit -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary py-2">
+                                <i class="fas fa-sign-in-alt me-2"></i> Entrar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Rodapé do Card -->
+                <div class="login-footer text-center py-3 rounded-bottom">
+                    <small class="text-muted">
+                        © 2023 VivaPet - Sistema de Gerenciamento para Pet Shop
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Script para tratar erro de carregamento da imagem
+document.addEventListener('DOMContentLoaded', function() {
+    var logoImg = document.querySelector('.login-logo');
+    logoImg.addEventListener('error', function() {
+        this.src = "{{ url_for('static', filename='default_pet.png') }}";
+    });
+});
+</script>
+{% endblock %}

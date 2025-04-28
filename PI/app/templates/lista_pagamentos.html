@@ -1,0 +1,376 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Título e Botão de Adicionar -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 text-gray-800 mb-0">Pagamentos</h1>
+        {% if current_user.is_admin %}
+        <a href="#" class="btn btn-primary">
+            <i class="fas fa-dollar-sign me-2"></i> Novo Pagamento
+        </a>
+        {% endif %}
+    </div>
+    
+    <!-- Cards com resumo -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total de Pagamentos
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_pagamentos }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total Pago
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(total_pago) }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-money-bill-wave fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Total Pendente
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(total_pendente) }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filtros</h6>
+        </div>
+        <div class="card-body">
+            <form id="filterForm" method="GET" action="{{ url_for('routes_bp.pagamentos_listar_html') }}">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="" {% if not status_filter %}selected{% endif %}>Todos</option>
+                            <option value="pendente" {% if status_filter == 'pendente' %}selected{% endif %}>Pendente</option>
+                            <option value="pago" {% if status_filter == 'pago' %}selected{% endif %}>Pago</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="dataInicial" class="form-label">Data Inicial</label>
+                        <input type="date" class="form-control" id="dataInicial" name="data_inicial" value="{{ data_inicial }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="dataFinal" class="form-label">Data Final</label>
+                        <input type="date" class="form-control" id="dataFinal" name="data_final" value="{{ data_final }}">
+                    </div>
+                    <div class="col-12 text-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-1"></i> Filtrar
+                        </button>
+                        <a href="{{ url_for('routes_bp.pagamentos_listar_html') }}" class="btn btn-secondary">
+                            <i class="fas fa-times me-1"></i> Limpar Filtros
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Tabela de pagamentos -->
+    {% if pagamentos|length > 0 %}
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Agendamento</th>
+                            <th>Cliente</th>
+                            <th>Valor</th>
+                            <th>Status</th>
+                            <th>Data do Pagamento</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pagamento in pagamentos %}
+                        <tr>
+                            <td>{{ pagamento.id_pagamento }}</td>
+                            <td>
+                                <!-- Texto simples para evitar erro de rota -->
+                                #{{ pagamento.agendamento.id_agendamento }}
+                            </td>
+                            <td>{{ pagamento.usuario.nome_user }}</td>
+                            <td>R$ {{ "%.2f"|format(pagamento.valor) }}</td>
+                            <td>
+                                {% if pagamento.status == 'pendente' %}
+                                <span class="badge bg-warning text-dark">Pendente</span>
+                                {% elif pagamento.status == 'pago' %}
+                                <span class="badge bg-success">Pago</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ pagamento.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if pagamento.data_pagamento %}
+                                {{ pagamento.data_pagamento.strftime('%d/%m/%Y %H:%M') }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('routes_bp.pagamentos_detalhar_html', id=pagamento.id_pagamento) }}" class="btn btn-sm btn-outline-info" title="Detalhes">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    {% if pagamento.status == 'pendente' and (current_user.is_admin or pagamento.usuario.id_usuario == current_user.id_usuario) %}
+                                    <a href="/pagamentos/{{ pagamento.id_pagamento }}/confirmar" class="btn btn-sm btn-outline-success" title="Confirmar Pagamento">
+                                        <i class="fas fa-check"></i>
+                                    </a>
+                                    {% endif %}
+                                    
+                                    {% if current_user.is_admin or pagamento.status == 'pago' %}
+                                    <button type="button" class="btn btn-sm btn-outline-primary" title="Imprimir Recibo"
+                                        onclick="imprimirRecibo('{{ pagamento.id_pagamento }}')">
+                                        <i class="fas fa-print"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Paginação -->
+    {% if total_pages > 1 %}
+    <div class="d-flex justify-content-center mt-4">
+        <nav aria-label="Navegação de páginas">
+            <ul class="pagination">
+                <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('routes_bp.pagamentos_listar_html', page=current_page-1, status=status_filter, data_inicial=data_inicial, data_final=data_final) }}">Anterior</a>
+                </li>
+                
+                {% for i in range(1, total_pages + 1) %}
+                <li class="page-item {% if current_page == i %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('routes_bp.pagamentos_listar_html', page=i, status=status_filter, data_inicial=data_inicial, data_final=data_final) }}">{{ i }}</a>
+                </li>
+                {% endfor %}
+                
+                <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('routes_bp.pagamentos_listar_html', page=current_page+1, status=status_filter, data_inicial=data_inicial, data_final=data_final) }}">Próxima</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle mr-2"></i> Nenhum pagamento encontrado com os filtros selecionados.
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal para imprimir recibo -->
+<div class="modal fade" id="modalRecibo" tabindex="-1" aria-labelledby="modalReciboLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalReciboLabel">Recibo de Pagamento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body" id="conteudoRecibo">
+                <!-- O conteúdo do recibo será carregado dinamicamente aqui -->
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Carregando...</span>
+                    </div>
+                    <p>Carregando recibo...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                <button type="button" class="btn btn-primary" onclick="window.print()">Imprimir</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CSS adicional -->
+<style>
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        #modalRecibo, #modalRecibo * {
+            visibility: visible;
+        }
+        #modalRecibo {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+        #modalRecibo .modal-dialog {
+            max-width: 100%;
+            margin: 0;
+        }
+        #modalRecibo .modal-content {
+            border: none;
+        }
+        #modalRecibo .modal-header,
+        #modalRecibo .modal-footer {
+            display: none;
+        }
+    }
+</style>
+
+<!-- Script para mostrar modal e carregar dados -->
+<script>
+    // Função para imprimir recibo
+    function imprimirRecibo(pagamentoId) {
+        // Abrir o modal
+        var myModal = new bootstrap.Modal(document.getElementById('modalRecibo'));
+        myModal.show();
+        
+        // Carregar os dados do recibo
+        fetch('/api/pagamentos/' + pagamentoId + '/recibo')
+            .then(response => response.json())
+            .then(data => {
+                // Formatar e exibir o recibo
+                if (data.status === 'success') {
+                    document.getElementById('conteudoRecibo').innerHTML = formatarRecibo(data.pagamento);
+                } else {
+                    document.getElementById('conteudoRecibo').innerHTML = 
+                        '<div class="alert alert-danger">Erro ao carregar o recibo: ' + data.message + '</div>';
+                }
+            })
+            .catch(error => {
+                document.getElementById('conteudoRecibo').innerHTML = 
+                    '<div class="alert alert-danger">Erro ao carregar o recibo: ' + error.message + '</div>';
+            });
+    }
+</script>
+
+<!-- Função formatarRecibo separada -->
+<script>
+    function formatarRecibo(pagamento) {
+        var dataFormatada = 'Pendente';
+        if (pagamento.data_pagamento) {
+            var data = new Date(pagamento.data_pagamento);
+            dataFormatada = data.toLocaleDateString('pt-BR') + ' ' + data.toLocaleTimeString('pt-BR');
+        }
+        
+        var tipoPagamento = 'Não informado';
+        if (pagamento.tipo_pagamento) {
+            tipoPagamento = pagamento.tipo_pagamento;
+        }
+        
+        var statusClass = 'text-warning';
+        if (pagamento.status === 'pago') {
+            statusClass = 'text-success';
+        }
+        
+        var statusText = 'PENDENTE';
+        if (pagamento.status === 'pago') {
+            statusText = 'PAGO';
+        }
+        
+        var valorFormatado = parseFloat(pagamento.valor).toFixed(2);
+        
+        var html = '';
+        html += '<div class="recibo-container border p-4">';
+        html += '    <div class="text-center mb-4">';
+        html += '        <h2>VIVAPET</h2>';
+        html += '        <p class="mb-0">CNPJ: 00.000.000/0001-00</p>';
+        html += '        <p>Av. Principal, 123 - Centro</p>';
+        html += '    </div>';
+        html += '    <h3 class="text-center mb-4">RECIBO DE PAGAMENTO</h3>';
+        html += '    <div class="row mb-3">';
+        html += '        <div class="col-6"><strong>Nº do Recibo:</strong> ' + pagamento.id_pagamento + '</div>';
+        html += '        <div class="col-6"><strong>Data do Pagamento:</strong> ' + dataFormatada + '</div>';
+        html += '    </div>';
+        html += '    <div class="mb-3">';
+        html += '        <strong>Cliente:</strong> ' + pagamento.cliente;
+        html += '    </div>';
+        html += '    <div class="mb-3">';
+        html += '        <strong>Agendamento Nº:</strong> ' + pagamento.id_agendamento;
+        html += '    </div>';
+        html += '    <div class="mb-3">';
+        html += '        <strong>Forma de Pagamento:</strong> ' + tipoPagamento;
+        html += '    </div>';
+        html += '    <div class="mb-5">';
+        html += '        <strong>Status do Pagamento:</strong> ';
+        html += '        <span class="' + statusClass + '">';
+        html += '            ' + statusText;
+        html += '        </span>';
+        html += '    </div>';
+        html += '    <div class="text-end mb-5">';
+        html += '        <h4>Valor Total: R$ ' + valorFormatado + '</h4>';
+        html += '    </div>';
+        html += '    <div class="mt-5 pt-5 text-center">';
+        html += '        <div class="border-top pt-2" style="width: 200px; margin: 0 auto;">';
+        html += '            Assinatura';
+        html += '        </div>';
+        html += '    </div>';
+        html += '</div>';
+        
+        return html;
+    }
+</script>
+
+<!-- Script para validação de datas -->
+<script>
+    // Validação das datas no formulário
+    document.addEventListener('DOMContentLoaded', function() {
+        const formFiltro = document.getElementById('filterForm');
+        const dataInicial = document.getElementById('dataInicial');
+        const dataFinal = document.getElementById('dataFinal');
+        
+        formFiltro.addEventListener('submit', function(event) {
+            if (dataInicial.value && dataFinal.value) {
+                if (new Date(dataInicial.value) > new Date(dataFinal.value)) {
+                    event.preventDefault();
+                    alert('A data inicial não pode ser maior que a data final.');
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

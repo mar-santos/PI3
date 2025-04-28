@@ -1,0 +1,108 @@
+<!-- app/templates/usuario_detalhe.html -->
+{% extends "base.html" %}
+
+{% block title %}VivaPet - Detalhes do Usuário{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="pet-form-title">Detalhes do Usuário</h1>
+    
+    <!-- Área para mensagens flash, se houver -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+    
+    <div class="form-container">
+        <div class="form-pet">
+            <!-- Username e Email -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Username:</label>
+                        <div class="form-control form-control-static">{{ usuario.username }}</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Email:</label>
+                        <div class="form-control form-control-static">{{ usuario.email|default('-') }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Nome Completo e CPF -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Nome Completo:</label>
+                        <div class="form-control form-control-static">{{ usuario.nome_user }}</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>CPF:</label>
+                        <div class="form-control form-control-static">{{ usuario.cpf|default('-') }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Endereço e Telefone -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Endereço:</label>
+                        <div class="form-control form-control-static">{{ usuario.endereco|default('-') }}</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Telefone:</label>
+                        <div class="form-control form-control-static">{{ usuario.telefone|default('-') }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pets na última linha -->
+            <div class="form-group">
+                <label>Pets:</label>
+                <div class="form-control form-control-static">
+                    {% if usuario.pets %}
+                        {{ usuario.pets|join(', ') }}
+                    {% else %}
+                        <span class="text-muted">Nenhum pet cadastrado</span>
+                    {% endif %}
+                </div>
+            </div>
+            <br>
+            <div class="text-center mt-4">
+                <a href="{{ url_for('routes_bp.exibir_form_edicao', id=usuario.id_usuario) }}" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> Editar Usuário
+                </a>
+                
+                <form action="{{ url_for('routes_bp.excluir_usuario', id=usuario.id_usuario) }}" method="post" onsubmit="return confirmarExclusao()" style="display: inline-block; margin: 0 10px;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Excluir Usuário
+                    </button>
+                </form>
+                
+                <a href="{{ url_for('routes_bp.listar_usuarios_html') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar para a lista
+                </a>
+            </div>
+            <br>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmarExclusao() {
+    return confirm('Tem certeza de que deseja excluir este usuário? Esta ação não pode ser desfeita.');
+}
+</script>
+{% endblock %}

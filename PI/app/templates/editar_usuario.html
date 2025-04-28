@@ -1,0 +1,180 @@
+<!-- app/templates/editar_usuario.html -->
+{% extends "base.html" %}
+
+{% block title %}VivaPet - Editar Usuário{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="pet-form-title">Editar Usuário</h1>
+    
+    <!-- Área para mensagens flash, se houver -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+    
+    <!-- Indicador de status do usuário (visível apenas para administradores) -->
+    {% if current_user.is_admin %}
+        <div class="user-status-indicator mb-3">
+            <span class="badge {% if usuario.ativo %}badge-success{% else %}badge-danger{% endif %} mr-2">
+                {{ 'Ativo' if usuario.ativo else 'Inativo' }}
+            </span>
+            <span class="badge {% if usuario.is_admin %}badge-primary{% else %}badge-secondary{% endif %}">
+                {{ 'Administrador' if usuario.is_admin else 'Usuário Regular' }}
+            </span>
+        </div>
+    {% endif %}
+    
+    <div class="form-container">
+        <form class="form-pet" action="{{ url_for('routes_bp.atualizar_usuario', id=usuario.id_usuario) }}" method="post">
+            <!-- Username e Email -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="username">Username:</label>
+                        <input type="text" id="username" name="username" value="{{ usuario.username }}" class="form-control" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="email">Email:</label>
+                        <input type="email" id="email" name="email" value="{{ usuario.email }}" class="form-control" required>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Nome Completo e CPF -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="nome_user">Nome Completo:</label>
+                        <input type="text" id="nome_user" name="nome_user" value="{{ usuario.nome_user }}" class="form-control" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="cpf">CPF:</label>
+                        <input type="text" id="cpf" name="cpf" value="{{ usuario.cpf }}" class="form-control" required>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Endereço e Telefone -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="endereco">Endereço:</label>
+                        <input type="text" id="endereco" name="endereco" value="{{ usuario.endereco }}" class="form-control" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="telefone">Telefone:</label>
+                        <input type="text" id="telefone" name="telefone" value="{{ usuario.telefone }}" class="form-control" required>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Nova Senha e Pets na última linha -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="senha">Nova Senha (deixe em branco para manter a atual):</label>
+                        <input type="password" id="senha" name="senha" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="pets">Pets (separados por vírgula):</label>
+                        <input type="text" id="pets" name="pets" value="{{ pets }}" class="form-control">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Opções de administrador e status (visível apenas para administradores) -->
+            {% if current_user.is_admin %}
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="is_admin" name="is_admin" {% if usuario.is_admin %}checked{% endif %}>
+                            <label class="form-check-label" for="is_admin">
+                                Administrador
+                            </label>
+                            <small class="form-text text-muted">
+                                Administradores têm acesso a todos os dados e funcionalidades do sistema.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="ativo" name="ativo" {% if usuario.ativo %}checked{% endif %}>
+                            <label class="form-check-label" for="ativo">
+                                Ativo
+                            </label>
+                            <small class="form-text text-muted">
+                                Usuários inativos não podem fazer login no sistema.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-primary">Atualizar Usuário</button>
+                <a href="{{ url_for('routes_bp.obter_usuario_html', id=usuario.id_usuario) }}" class="btn btn-secondary ml-3">Cancelar</a>
+            </div>
+        </form>
+        
+        <!-- Seção de ações administrativas (apenas para admins) -->
+        {% if current_user.is_admin %}
+        <div class="admin-actions mt-5">
+            <h4>Ações Administrativas</h4>
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Redefinir Senha</h5>
+                    <form action="{{ url_for('routes_bp.reset_senha_admin', id=usuario.id_usuario) }}" method="post" class="form-inline">
+                        <div class="input-group">
+                            <input type="password" class="form-control" name="nova_senha" placeholder="Nova senha" required>
+                            <div class="input-group-append">
+                                <button type="submit" class="btn btn-warning">Redefinir Senha</button>
+                            </div>
+                        </div>
+                        <small class="form-text text-muted mt-2">
+                            Use esta opção para redefinir a senha do usuário em caso de emergência.
+                        </small>
+                    </form>
+                    
+                    {% if usuario.ativo %}
+                    <hr>
+                    <h5 class="card-title">Desativar Usuário</h5>
+                    <form action="{{ url_for('routes_bp.excluir_usuario', id=usuario.id_usuario) }}" method="post">
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja desativar este usuário?');">
+                            Desativar Usuário
+                        </button>
+                        <small class="form-text text-muted mt-2">
+                            Esta ação marcará o usuário como inativo. Ele não poderá mais fazer login, mas seus dados serão preservados.
+                        </small>
+                    </form>
+                    {% else %}
+                    <hr>
+                    <div class="alert alert-warning">
+                        <strong>Usuário Inativo</strong> - Este usuário está atualmente desativado. Marque a opção "Ativo" acima para reativá-lo.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    <br>
+</div>
+{% endblock %}

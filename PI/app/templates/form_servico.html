@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="form-container">
+        <h1 class="form-title">{{ titulo }}</h1>
+
+        <form id="servicoForm">
+            <div class="form-group">
+                <label for="nome_servico">Nome do Serviço *</label>
+                <input type="text" id="nome_servico" name="nome_servico" class="form-control" value="{{ servico.nome_servico if servico else '' }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="descricao">Descrição</label>
+                <textarea id="descricao" name="descricao" class="form-control">{{ servico.descricao if servico else '' }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="valor_hora">Valor por Hora (R$)</label>
+                <input type="number" id="valor_hora" name="valor_hora" class="form-control" step="0.01" min="0" 
+                       value="{{ servico.valor_hora|default(0)|float if servico else 0 }}">
+            </div>
+
+            <div class="btn-container mt-4">
+                <a href="{{ url_for('routes_bp.listar_servicos_html') }}" class="btn btn-secondary">Cancelar</a>
+                <button type="button" id="btnSalvar" class="btn btn-primary">Salvar</button>
+            </div>
+
+            <div id="errorMessage" class="error-message mt-3"></div>
+        </form>
+    </div>
+</div>
+
+<!-- Variáveis Jinja2 para JavaScript -->
+<input type="hidden" id="isEdicao" value="{{ 'true' if servico and servico.id_servico else 'false' }}">
+<input type="hidden" id="servicoId" value="{{ servico.id_servico if servico and servico.id_servico else '' }}">
+<input type="hidden" id="redirectUrl" value="{{ url_for('routes_bp.listar_servicos_html') }}">
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Elementos do DOM
+        var btnSalvar = document.getElementById('btnSalvar');
+        var form = document.getElementById('servicoForm');
+        var errorMessage = document.getElementById('errorMessage');
+        
+        // Carregar configurações do servidor via campos hidden
+        var isEdicao = document.getElementById('isEdicao').value === 'true';
+        var servicoId = document.getElementById('servicoId').value;
+        var redirectUrl = document.getElementById('redirectUrl').value;
+        
+        // Event listener para o botão salvar
+        btnSalvar.addEventListener('click', function() {
+            // Limpar mensagens de erro
+            errorMessage.textContent = '';
+            
+            // Validação do formulário
+            if (!form.nome_servico.value.trim()) {
+                errorMessage.textContent = 'O nome do serviço é obrigatório.';
+                return;
+            }
+            
+            // Desabilitar botão para evitar múltiplos cliques
+            btnSalvar.disabled = true;
+            
+            // Preparar dados para envio
+            var dadosServico = {
+                nome_servico: form.nome_servico.value.trim(),
+                descricao: form.descricao.value.trim(),
+                valor_hora: parseFloat(form.valor_hora.value) || 0
+            };
+            
+            // Configuração da requisição
+            var url = '/servicos';
+            var method = 'POST';
+            var mensagem = 'Serviço cadastrado com sucesso!';
+            
+            if (isEdicao && servicoId) {
+                url = '/servicos/' + servicoId;
+                method = 'PUT';
+                mensagem = 'Serviço atualizado com sucesso!';
+            }
+            
+            // Enviar requisição para o servidor
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(dadosServico)
+            })
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error('Erro ao salvar serviço: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(function(data) {
+                alert(mensagem);
+                window.location.href = redirectUrl;
+            })
+            .catch(function(error) {
+                console.error('Erro:', error);
+                errorMessage.textContent = 'Ocorreu um erro ao salvar o serviço. Por favor, tente novamente.';
+                btnSalvar.disabled = false;
+            });
+        });
+    });
+</script>
+{% endblock %}

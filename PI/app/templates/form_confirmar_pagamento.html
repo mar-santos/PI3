@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Confirmar Pagamento{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('routes_bp.index') }}">Início</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('routes_bp.pagamentos_listar_html') }}">Pagamentos</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Confirmar Pagamento</li>
+                </ol>
+            </nav>
+            
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">{{ titulo }}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5 class="alert-heading">Dados do Pagamento</h5>
+                        <div class="info-item"><strong>ID Pagamento:</strong> #{{ pagamento.id_pagamento }}</div>
+                        <div class="info-item"><strong>Agendamento:</strong> #{{ pagamento.id_agendamento }}</div>
+                        <div class="info-item"><strong>Cliente:</strong> {{ usuario.nome_user }}</div>
+                        <div class="info-item"><strong>Valor Total:</strong> R$ {{ "%.2f"|format(pagamento.valor) }}</div>
+                        <div class="info-item"><strong>Status Atual:</strong> 
+                            {% if pagamento.status == 'pendente' %}
+                            <span class="badge bg-warning text-dark">Pendente</span>
+                            {% elif pagamento.status == 'pago' %}
+                            <span class="badge bg-success">Pago</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ pagamento.status }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <form action="{{ url_for('routes_bp.pagamentos_confirmar_post', id=pagamento.id_pagamento) }}" method="POST">
+                        <div class="mb-3">
+                            <label for="tipoPagamento" class="form-label">Forma de Pagamento</label>
+                            <select class="form-select" id="tipoPagamento" name="tipo_pagamento" required>
+                                <option value="" selected disabled>Selecione a forma de pagamento</option>
+                                <option value="cartao_credito">Cartão de Crédito</option>
+                                <option value="cartao_debito">Cartão de Débito</option>
+                                <option value="pix">PIX</option>
+                                <option value="dinheiro">Dinheiro</option>
+                                <option value="boleto">Boleto Bancário</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="observacoes" class="form-label">Observações</label>
+                            <textarea class="form-control" id="observacoes" name="observacoes" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="confirmarPagamento" name="confirmar" value="1" required>
+                            <label class="form-check-label" for="confirmarPagamento">
+                                Confirmo que o pagamento foi recebido
+                            </label>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('routes_bp.pagamentos_listar_html') }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                            <button type="submit" class="btn btn-success">Confirmar Pagamento</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

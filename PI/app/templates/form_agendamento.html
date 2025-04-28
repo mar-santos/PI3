@@ -1,0 +1,629 @@
+{% extends "base.html" %}
+
+{% block title %}{{ titulo }} - VivaPet{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h3 class="card-title mb-0">{{ titulo }}</h3>
+        </div>
+        <div class="card-body">
+            <!-- Modo visualizar: informações do agendamento sem forma de edição -->
+            {% if acao == 'visualizar' %}
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h5 class="border-bottom pb-2 mb-3">Informações Gerais</h5>
+                        <div class="row mb-2">
+                            <div class="col-md-4 text-muted">ID:</div>
+                            <div class="col-md-8 fw-bold">{{ agendamento.id_agendamento }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-4 text-muted">Cliente:</div>
+                            <div class="col-md-8">{{ usuario.nome_user }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-4 text-muted">Pet:</div>
+                            <div class="col-md-8">{{ pet.nome_pet }} ({{ pet.especie }} - {{ pet.raca }})</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-4 text-muted">Entrada:</div>
+                            <div class="col-md-8">{{ agendamento.data_entrada.strftime('%d/%m/%Y %H:%M') }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-4 text-muted">Saída:</div>
+                            <div class="col-md-8">{{ agendamento.data_saida.strftime('%d/%m/%Y %H:%M') }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-4 text-muted">Status:</div>
+                            <div class="col-md-8">
+                                <span class="badge bg-success">Confirmado</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h5 class="border-bottom pb-2 mb-3">Informações de Pagamento</h5>
+                        <div class="row mb-2">
+                            <div class="col-md-4 text-muted">Status:</div>
+                            <div class="col-md-8">
+                                {% if pagamento.status == 'pendente' %}
+                                <span class="badge bg-warning text-dark">Pendente</span>
+                                {% elif pagamento.status == 'pago' %}
+                                <span class="badge bg-success">Pago</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ pagamento.status }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-4 text-muted">Forma:</div>
+                            <div class="col-md-8">{{ forma_pagamento if forma_pagamento else "Não definido" }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-4 text-muted">Valor Total:</div>
+                            <div class="col-md-8 fw-bold">R$ {{ "%.2f"|format(agendamento.valor_total) }}</div>
+                        </div>
+                        
+                        {% if pagamento and pagamento.status == 'pendente' %}
+                        <div class="mt-3">
+                            <a href="/agendamento/{{ agendamento.id_agendamento }}/pagamento" class="btn btn-success">
+                                <i class="fas fa-dollar-sign me-1"></i> Realizar Pagamento
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Observações -->
+                <div class="mb-4">
+                    <h5 class="border-bottom pb-2 mb-3">Observações</h5>
+                    <div class="card">
+                        <div class="card-body bg-light">
+                            {% if agendamento.observacoes %}
+                            <p class="mb-0">{{ agendamento.observacoes }}</p>
+                            {% else %}
+                            <p class="text-muted mb-0">Nenhuma observação registrada.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Serviços -->
+                <h5 class="border-bottom pb-2 mb-3">Serviços</h5>
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Serviço</th>
+                                <th class="text-center">Quantidade</th>
+                                <th class="text-end">Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for servico in servicos_selecionados %}
+                            <tr>
+                                <td>{{ servico.nome_servico }}</td>
+                                <td class="text-center">{{ servico.quantidade }}</td>
+                                <td class="text-end">R$ {{ "%.2f"|format(servico.valor) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="fw-bold">
+                                <td colspan="2" class="text-end">Total:</td>
+                                <td class="text-end">R$ {{ "%.2f"|format(agendamento.valor_total) }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                
+                <!-- Botões de Ação no modo visualizar -->
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('routes_bp.agendamentos_listar_html') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Voltar
+                    </a>
+                    <div>
+                        {% if current_user.is_admin or agendamento.id_usuario == current_user.id_usuario %}
+                        <a href="{{ url_for('routes_bp.agendamentos_editar_html', id=agendamento.id_agendamento) }}" class="btn btn-primary">
+                            <i class="fas fa-edit me-1"></i> Editar Agendamento
+                        </a>
+                        <button type="button" class="btn btn-danger ms-2" onclick="confirmarCancelamento('{{ agendamento.id_agendamento }}')">
+                            <i class="fas fa-times me-1"></i> Cancelar Agendamento
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            
+            <!-- Modo edição ou novo: manter o formulário original -->
+            {% else %}
+            <form id="agendamentoForm">
+                <!-- Campos ocultos para valores de controle -->
+                {% if agendamento %}
+                <input type="hidden" id="id_agendamento" value="{{ agendamento.id_agendamento }}">
+                <input type="hidden" id="acao" value="editar">
+                {% else %}
+                <input type="hidden" id="acao" value="novo">
+                {% endif %}
+
+                <!-- Seleção de Usuário -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="id_usuario" class="form-label">Cliente</label>
+                        <select class="form-select" id="id_usuario" name="id_usuario" {% if not current_user.is_admin %}disabled{% endif %} required>
+                            <option value="">Selecione o cliente</option>
+                            {% for usuario in usuarios %}
+                            <option value="{{ usuario.id_usuario }}" {% if agendamento and agendamento.id_usuario == usuario.id_usuario %}selected{% endif %}>
+                                {{ usuario.nome_user }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Seleção de Pet -->
+                    <div class="col-md-6">
+                        <label for="id_pet" class="form-label">Pet</label>
+                        <select class="form-select" id="id_pet" name="id_pet" required>
+                            <option value="">Selecione o pet</option>
+                            {% for pet in pets %}
+                            <option value="{{ pet.id_pet }}" 
+                                    data-usuario="{{ pet.id_usuario }}" 
+                                    {% if agendamento and agendamento.id_pet == pet.id_pet %}selected{% endif %}>
+                                {{ pet.nome_pet }} ({{ pet.especie }} - {{ pet.raca }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Resto do formulário permanece idêntico -->
+                <!-- Datas de Entrada e Saída -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="data_entrada" class="form-label">Data e Hora de Entrada</label>
+                        <input type="datetime-local" class="form-control" id="data_entrada" name="data_entrada" 
+                               value="{{ agendamento.data_entrada.strftime('%Y-%m-%dT%H:%M') if agendamento else '' }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="data_saida" class="form-label">Data e Hora de Saída</label>
+                        <input type="datetime-local" class="form-control" id="data_saida" name="data_saida" 
+                               value="{{ agendamento.data_saida.strftime('%Y-%m-%dT%H:%M') if agendamento else '' }}" required>
+                    </div>
+                </div>
+
+                <!-- Serviços -->
+                <div class="mb-3">
+                    <label class="form-label">Serviços</label>
+                    <div class="card">
+                        <div class="card-body">
+                            <div id="servicos_selecionados" class="mb-3">
+                                {% if servicos_selecionados %}
+                                {% for servico_agendado in servicos_selecionados %}
+                                <div class="servico-item card mb-2" data-id="{{ servico_agendado.id_servico }}">
+                                    <div class="card-body py-2">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-5">
+                                                <strong>{{ servico_agendado.nome_servico }}</strong>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text">Qtd</span>
+                                                    <input type="number" class="form-control servico-quantidade" min="1" value="{{ servico_agendado.quantidade }}">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="text-end">
+                                                    <span class="servico-valor">R$ {{ "%.2f"|format(servico_agendado.valor) }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-1">
+                                                <button type="button" class="btn btn-sm btn-danger remover-servico">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                {% else %}
+                                <div class="alert alert-info">Nenhum serviço selecionado.</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="row align-items-end">
+                                <div class="col-md-6">
+                                    <label for="servico_select" class="form-label">Adicionar Serviço</label>
+                                    <select class="form-select" id="servico_select">
+                                        <option value="">Selecione um serviço</option>
+                                        {% for servico in servicos %}
+                                        <option value="{{ servico.id_servico }}" 
+                                                data-nome="{{ servico.nome_servico }}"
+                                                data-valorhora="{{ servico.valor_hora or 0 }}"
+                                                data-valordia="{{ servico.valor_dia or 0 }}">
+                                            {{ servico.nome_servico }} 
+                                            {% if servico.valor_hora and servico.valor_hora > 0 %}
+                                            (R$ {{ "%.2f"|format(servico.valor_hora) }}/hora)
+                                            {% elif servico.valor_dia and servico.valor_dia > 0 %}
+                                            (R$ {{ "%.2f"|format(servico.valor_dia) }}/dia)
+                                            {% endif %}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="input-group">
+                                        <span class="input-group-text">Qtd</span>
+                                        <input type="number" class="form-control" id="servico_quantidade" min="1" value="1">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="button" id="adicionar_servico" class="btn btn-primary w-100">
+                                        <i class="fas fa-plus me-1"></i> Adicionar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total -->
+                <div class="mb-3 text-end">
+                    <h4>Total: <span id="valor_total">R$ {{ "%.2f"|format(agendamento.valor_total) if agendamento else '0.00' }}</span></h4>
+                </div>
+
+                <!-- Observações -->
+                <div class="mb-3">
+                    <label for="observacoes" class="form-label">Observações</label>
+                    <textarea class="form-control" id="observacoes" name="observacoes" rows="3">{{ agendamento.observacoes if agendamento else '' }}</textarea>
+                </div>
+
+                <!-- Botões de Ação -->
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('routes_bp.agendamentos_listar_html') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Voltar
+                    </a>
+                    <button type="submit" class="btn btn-success" id="salvar_agendamento">
+                        <i class="fas fa-save me-1"></i> Salvar
+                    </button>
+                </div>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmação de cancelamento -->
+<div class="modal fade" id="cancelarModal" tabindex="-1" aria-labelledby="cancelarModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelarModalLabel">Confirmar Cancelamento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja cancelar este agendamento?</p>
+                <p class="text-danger">Esta ação não pode ser desfeita.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Não, manter agendamento</button>
+                <button type="button" class="btn btn-danger" id="confirmarCancelamentoBtn">Sim, cancelar agendamento</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const formAgendamento = document.getElementById('agendamentoForm');
+    const idUsuarioSelect = document.getElementById('id_usuario');
+    const idPetSelect = document.getElementById('id_pet');
+    const dataEntradaInput = document.getElementById('data_entrada');
+    const dataSaidaInput = document.getElementById('data_saida');
+    const servicoSelect = document.getElementById('servico_select');
+    const servicoQuantidadeInput = document.getElementById('servico_quantidade');
+    const servicosSelecionadosDiv = document.getElementById('servicos_selecionados');
+    const adicionarServicoBtn = document.getElementById('adicionar_servico');
+    const valorTotalSpan = document.getElementById('valor_total');
+    const observacoesTextarea = document.getElementById('observacoes');
+    const salvarAgendamentoBtn = document.getElementById('salvar_agendamento');
+    const acao = document.getElementById('acao').value;
+    
+    // Armazenar todas as opções de pets originais para filtro
+    const todasOpcoesPets = [];
+    Array.from(idPetSelect.options).forEach(opcao => {
+        if (opcao.value) { // Ignorar a opção "Selecione o pet"
+            todasOpcoesPets.push({
+                value: opcao.value,
+                text: opcao.text,
+                usuario: opcao.dataset.usuario
+            });
+        }
+    });
+    
+    // Em novo agendamento, selecionar automaticamente o usuário atual se não for admin,
+    // mas não preencher as datas automaticamente
+    if (acao === 'novo') {
+        // Se não for admin, selecionar automaticamente o usuário atual
+        if (idUsuarioSelect.disabled) {
+            idUsuarioSelect.value = idUsuarioSelect.options[1].value;
+            filtrarPets();
+        }
+        
+        // Manter os campos de data vazios (já estão assim pelo HTML)
+    }
+    
+    // Filtrar os pets com base no usuário selecionado
+    function filtrarPets() {
+        const usuarioId = idUsuarioSelect.value;
+        
+        // Limpar o select de pets, mantendo apenas a primeira opção
+        while (idPetSelect.options.length > 1) {
+            idPetSelect.remove(1);
+        }
+        
+        // Se não houver usuário selecionado, retornar
+        if (!usuarioId) return;
+        
+        // Adicionar apenas os pets do usuário selecionado
+        todasOpcoesPets.forEach(pet => {
+            if (pet.usuario === usuarioId) {
+                const option = document.createElement('option');
+                option.value = pet.value;
+                option.text = pet.text;
+                option.dataset.usuario = pet.usuario;
+                idPetSelect.add(option);
+            }
+        });
+    }
+    
+    // Event listener para mudança de usuário
+    idUsuarioSelect.addEventListener('change', filtrarPets);
+    
+    // Adicionar serviço à lista
+    adicionarServicoBtn.addEventListener('click', function() {
+        const servicoId = servicoSelect.value;
+        if (!servicoId) return;
+        
+        // Verificar se o serviço já está na lista
+        const servicoExistente = document.querySelector(`.servico-item[data-id="${servicoId}"]`);
+        if (servicoExistente) {
+            alert('Este serviço já foi adicionado.');
+            return;
+        }
+        
+        const servicoOption = servicoSelect.options[servicoSelect.selectedIndex];
+        const servicoNome = servicoOption.dataset.nome;
+        const valorHora = parseFloat(servicoOption.dataset.valorhora);
+        const valorDia = parseFloat(servicoOption.dataset.valordia);
+        const quantidade = parseInt(servicoQuantidadeInput.value, 10);
+        
+        // Calcular valor do serviço
+        let valor = 0;
+        let tipoPeriodo = '';
+        
+        if (valorHora > 0) {
+            valor = valorHora * quantidade;
+            tipoPeriodo = 'hora';
+        } else if (valorDia > 0) {
+            // Calcular dias entre data de entrada e saída
+            const entrada = new Date(dataEntradaInput.value);
+            const saida = new Date(dataSaidaInput.value);
+            const diffTime = Math.abs(saida - entrada);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const dias = Math.max(1, diffDays);
+            
+            valor = valorDia * quantidade * dias;
+            tipoPeriodo = 'dia';
+        }
+        
+        // Remover mensagem "Nenhum serviço selecionado"
+        const alertaVazio = servicosSelecionadosDiv.querySelector('.alert');
+        if (alertaVazio) {
+            alertaVazio.remove();
+        }
+        
+        // Criar elemento HTML para o serviço
+        const servicoItem = document.createElement('div');
+        servicoItem.className = 'servico-item card mb-2';
+        servicoItem.dataset.id = servicoId;
+        servicoItem.dataset.tipo = tipoPeriodo;
+        
+        servicoItem.innerHTML = `
+            <div class="card-body py-2">
+                <div class="row align-items-center">
+                    <div class="col-md-5">
+                        <strong>${servicoNome}</strong>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">Qtd</span>
+                            <input type="number" class="form-control servico-quantidade" min="1" value="${quantidade}">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-end">
+                            <span class="servico-valor">R$ ${valor.toFixed(2)}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <button type="button" class="btn btn-sm btn-danger remover-servico">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Adicionar ao DOM
+        servicosSelecionadosDiv.appendChild(servicoItem);
+        
+        // Adicionar event listener para remover o serviço
+        servicoItem.querySelector('.remover-servico').addEventListener('click', function() {
+            servicoItem.remove();
+            if (servicosSelecionadosDiv.children.length === 0) {
+                servicosSelecionadosDiv.innerHTML = '<div class="alert alert-info">Nenhum serviço selecionado.</div>';
+            }
+            calcularTotal();
+        });
+        
+        // Adicionar event listener para atualizar a quantidade
+        servicoItem.querySelector('.servico-quantidade').addEventListener('change', function() {
+            calcularTotal();
+        });
+        
+        // Resetar campos
+        servicoSelect.value = '';
+        servicoQuantidadeInput.value = '1';
+        
+        // Recalcular total
+        calcularTotal();
+    });
+    
+    // Calcular total do agendamento
+    function calcularTotal() {
+        let total = 0;
+        
+        // Iterar sobre todos os serviços na lista
+        const servicosItems = document.querySelectorAll('.servico-item');
+        servicosItems.forEach(item => {
+            const valorTexto = item.querySelector('.servico-valor').textContent;
+            const valor = parseFloat(valorTexto.replace('R$ ', '').replace(',', '.'));
+            total += valor;
+        });
+        
+        // Atualizar valor total exibido
+        valorTotalSpan.textContent = `R$ ${total.toFixed(2)}`;
+    }
+    
+    // Recalcular valores quando as datas mudarem
+    dataEntradaInput.addEventListener('change', calcularTotal);
+    dataSaidaInput.addEventListener('change', calcularTotal);
+    
+    // Enviar formulário
+    formAgendamento.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Validação básica
+        if (!idUsuarioSelect.value) {
+            alert('Selecione o cliente.');
+            return;
+        }
+        
+        if (!idPetSelect.value) {
+            alert('Selecione o pet.');
+            return;
+        }
+        
+        if (!dataEntradaInput.value) {
+            alert('Informe a data de entrada.');
+            return;
+        }
+        
+        if (!dataSaidaInput.value) {
+            alert('Informe a data de saída.');
+            return;
+        }
+        
+        // Verificar se há serviços selecionados
+        const servicosItems = document.querySelectorAll('.servico-item');
+        if (servicosItems.length === 0) {
+            alert('Adicione pelo menos um serviço.');
+            return;
+        }
+        
+        // Construir objeto com dados do agendamento
+        const servicos = [];
+        servicosItems.forEach(item => {
+            const id = item.dataset.id;
+            const quantidade = parseInt(item.querySelector('.servico-quantidade').value, 10);
+            servicos.push({
+                id_servico: id,
+                quantidade: quantidade
+            });
+        });
+        
+        const dadosAgendamento = {
+            id_usuario: idUsuarioSelect.value,
+            id_pet: idPetSelect.value,
+            data_entrada: dataEntradaInput.value.replace('T', ' '),
+            data_saida: dataSaidaInput.value.replace('T', ' '),
+            observacoes: observacoesTextarea.value,
+            servicos: servicos
+        };
+        
+        // Desativar botão para evitar múltiplos envios
+        salvarAgendamentoBtn.disabled = true;
+        salvarAgendamentoBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Salvando...';
+        
+        // Executar requisição AJAX
+        let url = '/api/agendamentos';
+        let metodo = 'POST';
+        
+        if (acao === 'editar') {
+            const idAgendamento = document.getElementById('id_agendamento').value;
+            url = `/api/agendamentos/${idAgendamento}`;
+            metodo = 'PUT';
+        }
+        
+        // Fazer requisição ao servidor
+        fetch(url, {
+            method: metodo,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(dadosAgendamento),
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.message || 'Erro ao salvar agendamento.');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            alert(data.message || 'Agendamento salvo com sucesso!');
+            // Redirecionar para a lista de agendamentos
+            window.location.href = "{{ url_for('routes_bp.agendamentos_listar_html') }}";
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao salvar agendamento: ' + error.message);
+            // Reativar botão
+            salvarAgendamentoBtn.disabled = false;
+            salvarAgendamentoBtn.innerHTML = '<i class="fas fa-save me-1"></i> Salvar';
+        });
+    });
+    
+    // Se for edição, filtrar os pets inicialmente
+    if (acao === 'editar') {
+        filtrarPets();
+        
+        // Adicionar listeners para remover serviços
+        document.querySelectorAll('.remover-servico').forEach(btn => {
+            btn.addEventListener('click', function() {
+                btn.closest('.servico-item').remove();
+                if (servicosSelecionadosDiv.children.length === 0) {
+                    servicosSelecionadosDiv.innerHTML = '<div class="alert alert-info">Nenhum serviço selecionado.</div>';
+                }
+                calcularTotal();
+            });
+        });
+        
+        // Adicionar listeners para atualizar quantidade
+        document.querySelectorAll('.servico-quantidade').forEach(input => {
+            input.addEventListener('change', calcularTotal);
+        });
+    }
+    
+    // Realizar a filtragem inicial de pets caso usuário já esteja selecionado
+    if (idUsuarioSelect.value) {
+        filtrarPets();
+    }
+});
+</script>
+{% endblock %}
