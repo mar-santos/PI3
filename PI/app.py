@@ -29,11 +29,9 @@ def create_app():
     @login_manager.user_loader
     def load_user(user_id):
         from app.models.models import Usuario
-        # Atualização para usar o método recomendado pelo SQLAlchemy 2.0
         try:
             return db.session.get(Usuario, int(user_id))
         except Exception:
-            # Fallback para o método legado se o novo método falhar
             return Usuario.query.get(int(user_id))
 
     # Adiciona current_user a todos os templates
@@ -45,17 +43,9 @@ def create_app():
     app.register_blueprint(routes_bp)
     app.register_blueprint(routes_pets_bp, url_prefix='/pets')
 
-    # Definir rota para a página inicial (para debugging)
-    @app.route('/debug')
-    def debug():
-        """Rota de depuração para verificar se tudo está funcionando"""
-        from flask import render_template
-        return render_template('debug.html')
-
     # Crie as tabelas do banco de dados
     with app.app_context():
         db.create_all()
-
     return app
 
 app = create_app()
@@ -63,5 +53,8 @@ app = create_app()
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
 
-# if __name__ == '__main__':
-#    app.run(debug=True)
+
+
+
+
+    

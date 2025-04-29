@@ -30,12 +30,6 @@ class Usuario(UserMixin, db.Model):
         return str(self.id_usuario)
 
     def set_password(self, senha):
-        """
-        Define a senha do usuário com tratamento de erro robusto.
-        
-        Args:
-            senha: A senha em texto puro para ser hasheada
-        """
         try:
             self.senha_hash = generate_password_hash(senha)
             logger.info(f"Senha definida com sucesso para o usuário {self.username}")
@@ -44,15 +38,6 @@ class Usuario(UserMixin, db.Model):
             raise ValueError(f"Não foi possível definir a senha: {str(e)}")
 
     def check_password(self, senha):
-        """
-        Verifica a senha do usuário com tratamento de erro robusto.
-        
-        Args:
-            senha: A senha em texto puro para verificar contra o hash armazenado
-            
-        Returns:
-            bool: True se a senha estiver correta, False caso contrário
-        """
         try:
             return check_password_hash(self.senha_hash, senha)
         except Exception as e:
@@ -60,16 +45,6 @@ class Usuario(UserMixin, db.Model):
             return False
 
     def atualizar_usuario(self, dados, alterar_senha=False):
-        """
-        Atualiza os dados do usuário de forma segura, tratando a senha separadamente.
-        
-        Args:
-            dados: Dicionário contendo os campos a serem atualizados
-            alterar_senha: Booleano indicando se a senha deve ser alterada
-            
-        Returns:
-            bool: True se a atualização for bem-sucedida, False caso contrário
-        """
         try:
             # Backup do estado original para log de alterações significativas
             original_is_admin = self.is_admin
