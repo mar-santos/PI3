@@ -1,0 +1,19 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+COPY . .
+
+# Instalar ferramentas de busca
+RUN apt-get update && apt-get install -y findutils grep
+
+# Mostrar apenas diretórios principais e arquivos importantes
+RUN echo "===== DIRETÓRIOS PRINCIPAIS =====" && \
+    find . -maxdepth 1 -type d | sort && \
+    echo "\n===== ARQUIVOS PYTHON NA RAIZ =====" && \
+    find . -maxdepth 1 -name "*.py" | sort && \
+    echo "\n===== BUSCA POR app.py =====" && \
+    find . -name "app.py" | sort
+
+# Manter o contêiner em execução
+CMD ["bash"]
